@@ -13,7 +13,7 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg);
             margin: 0;
             padding: 20px;
@@ -183,7 +183,7 @@
         <div style="text-align: right; margin-top: 15px; font-size: 1.2em;">
             <strong>Összesen: <span id="totalPrice">0</span> HUF</strong>
         </div>
-        <button class="export-btn" onclick="sendOrderToCloud()">☁️ RENDELÉS LEADÁSA</button>
+        <button class="export-btn" onclick="sendOrderToCloud()">RENDELÉS LEADÁSA</button>
     </div>
 </div>
 
@@ -394,7 +394,7 @@
 
         const btn = document.querySelector('.export-btn');
         const originalText = btn.innerText;
-        btn.innerText = "⏳ Küldés...";
+        btn.innerText = "Küldés...";
         btn.disabled = true;
         btn.style.opacity = "0.5";
 
@@ -408,7 +408,7 @@
                 }
             });
 
-            alert("🎉 Sikeresen leadtad a rendelést!");
+            alert("Sikeresen leadtad a rendelést!");
             
             basket = [];
             customerInput.value = "";
