@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merch Rendelés Kezelő</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #27ae60;
+            --bg: #f4f7f6;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 20px;
+            color: var(--primary);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: var(--white);
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card img {
+            width: 100%;
+            aspect-ratio: 1 / 1; 
+            object-fit: cover;   
+            border-radius: 8px;
+            margin-bottom: 15px;
+            background: #eee;
+        }
+
+        .card h3 { margin: 10px 0 5px 0; font-size: 1.1em; }
+        .price { font-weight: bold; color: var(--accent); font-size: 1.1em; margin: 0 0 10px 0;}
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: auto; 
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .controls-row > * {
+            flex: 1;
+        }
+
+        select, input, button {
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            font-size: 0.9em;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: opacity 0.2s;
+            padding: 10px;
+            width: 100%;
+        }
+
+        button:hover { opacity: 0.8; }
+
+        .order-section {
+            background: var(--white);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow-x: auto; /* Ha kicsi a képernyő, lehessen görgetni a táblázatot */
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 0.9em;
+            min-width: 500px;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th { background-color: #f8f9fa; }
+
+        .export-btn {
+            background-color: #2980b9;
+            margin-top: 20px;
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1em;
+        }
+
+        .customer-info {
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        @media (max-width: 600px) {
+            .customer-info {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Merch Rendelés Összesítő</h1>
+        <p>Válaszd ki a termékeket, add meg a neved, és küldd be a rendelést!</p>
+    </header>
+
+    <div class="customer-info">
+        <input type="text" id="customerName" placeholder="Megrendelő neve (kötelező)*" required>
+        <input type="text" id="orderNote" placeholder="Megjegyzés (opcionális)">
+    </div>
+
+    <div class="product-grid" id="productGrid">
+        <!-- A termékeket JS generálja -->
+    </div>
+
+    <div class="order-section">
+        <h2>Aktuális kosár</h2>
+        <table id="orderTable">
+            <thead>
+                <tr>
+                    <th>Termék</th>
+                    <th>Szín</th>
+                    <th>Méret</th>
+                    <th>Db</th> <!-- ÚJ OSZLOP -->
+                    <th>Ár</th>
+                    <th>Művelet</th>
+                </tr>
+            </thead>
+            <tbody id="orderBody">
+                <!-- Ide kerülnek a felvett rendelések -->
+            </tbody>
+        </table>
+        <div style="text-align: right; margin-top: 15px; font-size: 1.2em;">
+            <strong>Összesen: <span id="totalPrice">0</span> HUF</strong>
+        </div>
+        <button class="export-btn" onclick="sendOrderToCloud()">☁️ RENDELÉS LEADÁSA</button>
+    </div>
+</div>
+
+<script>
+    // FONTOS: IDE MÁSOLDBE A GOOGLE APPS SCRIPT LINKEDET:
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxWygdxABSvkdhIreCyDIL-ARsaKIH0p3d187IgjN56l0toR3nR31TZkXvvNkgmfg/exec";
+
+    const products = [
+        { 
+            id: 1, 
+            name: "Kapucnis pulcsi", 
+            price: 6000, 
+            colors: ["Forest Green", "Paragon", "Carolina Blue", "Cocoa", "Aquatic", "Black", "White"], 
+            sizes: ["S", "M", "L", "XL", "XXL"],
+            images: {
+                "Forest Green": "https://i.ibb.co/7J9RrsjC/forest.png",
+                "Paragon": "https://i.ibb.co/NgLY6KRh/paragon.png",
+                "Carolina Blue": "https://i.ibb.co/GmM5mn0/carolina.png",
+                "Cocoa": "https://i.ibb.co/C3QRNPLt/cocoa.png",
+                "Aquatic": "https://i.ibb.co/7dpMB3s7/aquatic.png",
+                "Black": "https://i.ibb.co/78QqVBG/black.png",
+                "White": "https://i.ibb.co/23Qw5xL8/white.png"
+            }
+        },
+        { 
+            id: 2, 
+            name: "Környakas pulcsi", 
+            price: 5000, 
+            colors: ["Forest Green", "Paragon", "Navy", "Cocoa", "Black", "White"], 
+            sizes: ["S", "M", "L", "XL", "XXL"],
+            images: {
+                "Forest Green": "https://i.ibb.co/nshtyJpr/k-rnyakas.png",
+                "Paragon": "https://i.ibb.co/jP01V8My/paragon.png",
+                "Navy": "https://i.ibb.co/zVjfRPJk/navy.png",
+                "Cocoa": "https://i.ibb.co/dv77BzQ/cocoa.png",
+                "Black": "https://i.ibb.co/sd13G4T0/black.png",
+                "White": "https://i.ibb.co/Q7ndZmK2/white.png"
+		}
+        },
+        { 
+            id: 3, 
+            name: "Környakas póló", 
+            price: 4550, 
+            colors: ["Forest Green", "Black", "White"], 
+            sizes: ["S", "M", "L", "XL", "XXL"],
+            images: {
+                "Forest Green": "https://i.ibb.co/Q3xtGk97/forest.png",
+                "Black": "https://i.ibb.co/xTqQkGm/black.png",
+                "White": "https://i.ibb.co/35pQPhqd/white.png"
+            }
+        },
+        { 
+            id: 4, 
+            name: "Tesipóló", 
+            price: 2800, 
+            colors: ["Fehér"], 
+            sizes: ["XS", "S", "M", "L", "XL", "XXL"],
+            images: {
+                "Fehér": "https://i.ibb.co/tMsrd6Qw/tesi.png"
+            }
+        },
+        { 
+            id: 5, 
+            name: "Zokni", 
+            price: 1225, 
+            colors: ["Zöld", "Fehér"], 
+            sizes: ["35-38", "39-42", "43-46"],
+            images: {
+                "Zöld": "https://i.ibb.co/zTtzb495/z-ld.png",
+                "Fehér": "https://i.ibb.co/PZMgTNpG/feh-r.png"
+            }
+        },
+        { 
+            id: 6, 
+            name: "Fekete póló", 
+            price: 4000, 
+            colors: ["Black"], 
+            sizes: ["XS", "S", "M", "L", "XL", "XXL"],
+            images: {
+                "Black": "https://i.ibb.co/vCrp4s7C/fekete.png"
+            }
+        }
+    ];
+
+    let basket = [];
+
+    // Kép frissítése színválasztáskor
+    function updateProductImage(productId) {
+        const product = products.find(p => p.id === productId);
+        const colorSelect = document.getElementById(`color-${productId}`);
+        const selectedColor = colorSelect.value;
+        const imgElement = document.getElementById(`img-${productId}`);
+
+        const newImgSrc = product.images[selectedColor];
+
+        if (newImgSrc) {
+            imgElement.src = newImgSrc;
+        }
+    }
+
+    // Termékkártyák legenerálása
+    function initProducts() {
+        const grid = document.getElementById('productGrid');
+        products.forEach(p => {
+            const defaultColor = p.colors[0]; 
+            const defaultImg = p.images[defaultColor]; 
+
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+                <img src="${defaultImg}" alt="${p.name}" id="img-${p.id}">
+                <h3>${p.name}</h3>
+                <p class="price">${p.price.toLocaleString('hu-HU')} HUF / db</p>
+                <div class="controls">
+                    <select id="color-${p.id}" onchange="updateProductImage(${p.id})">
+                        ${p.colors.map(c => `<option value="${c}">${c}</option>`).join('')}
+                    </select>
+                    <div class="controls-row">
+                        <select id="size-${p.id}">
+                            ${p.sizes.map(s => `<option value="${s}">${s}</option>`).join('')}
+                        </select>
+                        <input type="number" id="qty-${p.id}" value="1" min="1" title="Darabszám">
+                    </div>
+                    <button onclick="addToBasket(${p.id})">Kosárba</button>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    function addToBasket(productId) {
+        const customerInput = document.getElementById('customerName');
+        const customer = customerInput.value.trim(); 
+
+        if (customer === "") {
+            alert("Kérlek, add meg a megrendelő nevét!");
+            customerInput.focus(); 
+            return; 
+        }
+
+        const product = products.find(p => p.id === productId);
+        const color = document.getElementById(`color-${productId}`).value;
+        const size = document.getElementById(`size-${productId}`).value;
+        const qtyInput = document.getElementById(`qty-${productId}`).value;
+        const qty = parseInt(qtyInput, 10);
+        const note = document.getElementById('orderNote').value || "-";
+
+        if (isNaN(qty) || qty < 1) {
+            alert("Kérlek, érvényes darabszámot adj meg!");
+            return;
+        }
+
+        const orderItem = {
+            customer: customer,
+            product: product.name,
+            color: color,
+            size: size,
+            quantity: qty,          // Ezt elküldjük a felhőbe is
+            price: product.price * qty, // Felszorozzuk a darabszámmal
+            note: note,
+            timestamp: new Date().toLocaleString('hu-HU')
+        };
+
+        basket.push(orderItem);
+        renderTable();
+    }
+
+    function removeItem(index) {
+        basket.splice(index, 1);
+        renderTable();
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById('orderBody');
+        tbody.innerHTML = '';
+        let total = 0;
+
+        basket.forEach((item, index) => {
+            total += item.price;
+            tbody.innerHTML += `
+                <tr>
+                    <td>${item.product} <br><small>(${item.customer})</small></td>
+                    <td>${item.color}</td>
+                    <td>${item.size}</td>
+                    <td><strong>${item.quantity} db</strong></td>
+                    <td>${item.price.toLocaleString('hu-HU')} Ft</td>
+                    <td><button style="background:#e74c3c; padding: 5px 10px;" onclick="removeItem(${index})">X</button></td>
+                </tr>
+            `;
+        });
+
+        document.getElementById('totalPrice').innerText = total.toLocaleString('hu-HU');
+    }
+
+    async function sendOrderToCloud() {
+        const customerInput = document.getElementById('customerName');
+        
+        if (customerInput.value.trim() === "") {
+            alert("Kérlek, add meg a megrendelő nevét a rendelés leadásához!");
+            customerInput.focus();
+            return;
+        }
+
+        if (basket.length === 0) {
+            alert("A kosarad üres!");
+            return;
+        }
+
+        const btn = document.querySelector('.export-btn');
+        const originalText = btn.innerText;
+        btn.innerText = "⏳ Küldés...";
+        btn.disabled = true;
+        btn.style.opacity = "0.5";
+
+        try {
+            await fetch(WEB_APP_URL, {
+                method: 'POST',
+                body: JSON.stringify(basket),
+                mode: 'no-cors',
+                headers: {
+                    'Content-Type': 'text/plain' 
+                }
+            });
+
+            alert("🎉 Sikeresen leadtad a rendelést!");
+            
+            basket = [];
+            customerInput.value = "";
+            document.getElementById('orderNote').value = "";
+            renderTable();
+
+        } catch (error) {
+            alert("Hiba történt a küldés során. Kérlek próbáld újra!");
+            console.error(error);
+        } finally {
+            btn.innerText = originalText;
+            btn.disabled = false;
+            btn.style.opacity = "1";
+        }
+    }
+
+    initProducts();
+</script>
+
+</body>
+</html>
