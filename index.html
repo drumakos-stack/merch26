@@ -18,7 +18,17 @@
             --border-thick: 3px solid var(--text-main);
             --border-thin: 1px solid var(--border-color);
         }
+		/* A szöveg kijelölésének színe az egész oldalon */
+		::selection {
+    		background-color: var(--brand-green); /* A háttér neon zöld lesz */
+    		color: var(--bg-base);               /* A szöveg pedig fekete */
+		}
 
+/* Firefox támogatáshoz (opcionális, de ajánlott) */
+		::-moz-selection {
+    		background-color: var(--brand-green);
+    		color: var(--bg-base);
+		}
         body {
             font-family: 'Space Grotesk', sans-serif;
             background-color: var(--bg-base);
@@ -105,6 +115,7 @@
             outline: none;
             border-color: var(--brand-green);
             background-color: #000;
+    		caret-color: var(--brand-green);
         }
 
 	/* --- BACKGROUND GLITCH EFFECTS --- */
