@@ -18,17 +18,17 @@
             --border-thick: 3px solid var(--text-main);
             --border-thin: 1px solid var(--border-color);
         }
-		/* A szöveg kijelölésének színe az egész oldalon */
-		::selection {
-    		background-color: var(--brand-green); /* A háttér neon zöld lesz */
-    		color: var(--bg-base);               /* A szöveg pedig fekete */
-		}
+        /* A szöveg kijelölésének színe az egész oldalon */
+        ::selection {
+            background-color: var(--brand-green); /* A háttér neon zöld lesz */
+            color: var(--bg-base);               /* A szöveg pedig fekete */
+        }
 
 /* Firefox támogatáshoz (opcionális, de ajánlott) */
-		::-moz-selection {
-    		background-color: var(--brand-green);
-    		color: var(--bg-base);
-		}
+        ::-moz-selection {
+            background-color: var(--brand-green);
+            color: var(--bg-base);
+        }
         body {
             font-family: 'Space Grotesk', sans-serif;
             background-color: var(--bg-base);
@@ -115,10 +115,10 @@
             outline: none;
             border-color: var(--brand-green);
             background-color: #000;
-    		caret-color: var(--brand-green);
+            caret-color: var(--brand-green);
         }
 
-	/* --- BACKGROUND GLITCH EFFECTS --- */
+    /* --- BACKGROUND GLITCH EFFECTS --- */
 
 body::before, body::after {
     content: "";
@@ -222,17 +222,48 @@ body::after {
             text-transform: uppercase;
         }
 
+        /* --- DINAMIKUS ÁRAK STÍLUSAI --- */
+        .price-container {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin: 0 0 20px 0;
+        }
+
         .price { 
             font-family: 'JetBrains Mono', monospace;
             color: var(--brand-green); 
             font-size: 1.2em; 
             font-weight: 700;
-            margin: 0 0 20px 0;
             background: rgba(0, 255, 102, 0.1);
             padding: 5px 10px;
             border: 1px solid var(--brand-green);
-            width: fit-content;
+            margin: 0;
         }
+
+        .dynamic-price {
+            font-family: 'JetBrains Mono', monospace;
+            color: #ffaa00; 
+            font-size: 0.7em;
+            font-weight: 700;
+            background: rgba(255, 170, 0, 0.1);
+            padding: 5px 10px;
+            border: 1px dashed #ffaa00;
+        }
+
+        .dynamic-price.loading {
+            color: var(--text-muted);
+            border-color: var(--border-color);
+            background: transparent;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+        /* --- STÍLUSOK VÉGE --- */
 
         .controls {
             display: flex;
@@ -481,7 +512,7 @@ body::after {
 <div class="container">
     <header>
         <h1>Merch <span>//</span> Rendelés</h1>
-        <p>[ System.Online ] // FAKT Szakkollégium 2026.</p>
+        <p>[ System.Online ] // FAKT Szakkollégium 2026. // MINDEN RENDELÉS CSÖKKENTI AZ ÁRAKAT</p>
     </header>
 
     <div class="customer-info">
@@ -533,7 +564,7 @@ body::after {
     </div>
 </div>
 <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxWygdxABSvkdhIreCyDIL-ARsaKIH0p3d187IgjN56l0toR3nR31TZkXvvNkgmfg/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby5KkAbeAijiABBP-2VU2OFTAaTCoJ2Lj0ixqf3lta8yRFvxoyG5NKjE0XkhvyA45KF/exec";
 
     const products = [
         { 
@@ -639,10 +670,10 @@ body::after {
                     </tbody>
                 </table>
                 <p style="font-size: 0.8em; color: var(--text-muted); margin-top: 10px;">Kariban MEN'S SHORT-SLEEVED PIQUÉ POLO SHIRT</p>
-				<p style="font-size: 0.8em; color: var(--text-muted); margin-top: 10px;">100% pamut</p>
+                <p style="font-size: 0.8em; color: var(--text-muted); margin-top: 10px;">100% pamut</p>
 
             `
-        },    
+        },  
 { 
             id: 4, 
             name: "Tesipóló", 
@@ -673,7 +704,7 @@ body::after {
                 </table>
                 <p style="font-size: 0.8em; color: var(--text-muted); margin-top: 10px;">Proact MEN'S SHORT-SLEEVED SPORTS T-SHIRT</p>
                 <p style="font-size: 0.8em; color: var(--text-muted); margin-top: 10px;">100% Poliészter</p>
-				
+                
             `
         },
  { 
@@ -754,8 +785,13 @@ sizeChart: `
                 </div>
                 <div class="card-content">
                     <h3>${p.name}</h3>
-                    <div class="price">${p.price.toLocaleString('hu-HU')} HUF</div>
-			<button class="size-guide-btn" onclick="openSizeChart(${p.id})">Mérettáblázat</button>
+                    
+                    <div class="price-container">
+                        <div class="price" title="Alapár">${p.price.toLocaleString('hu-HU')} HUF</div>
+                        <div class="dynamic-price loading" id="dyn-price-${p.id}">[ FETCHING... ]</div>
+                    </div>
+
+            <button class="size-guide-btn" onclick="openSizeChart(${p.id})">Mérettáblázat</button>
                     <div class="controls">
                         <select id="color-${p.id}" onchange="updateProductImage(${p.id})">
                             ${p.colors.map(c => `<option value="${c}">${c}</option>`).join('')}
@@ -840,7 +876,8 @@ sizeChart: `
 
         document.getElementById('totalPrice').innerText = total.toLocaleString('hu-HU');
     }
-	function openSizeChart(id) {
+    
+    function openSizeChart(id) {
     const p = products.find(x => x.id === id);
     document.getElementById('modalTitle').innerText = p.name;
     document.getElementById('modalBody').innerHTML = p.sizeChart;
@@ -858,6 +895,41 @@ window.onclick = function(event) {
     }
 }
 
+async function fetchDynamicPrices() {
+        try {
+            const response = await fetch(WEB_APP_URL); 
+            const dynamicPrices = await response.json();
+
+            // Végigmegyünk a frontend termékeken
+            products.forEach(p => {
+                const dynPriceElement = document.getElementById(`dyn-price-${p.id}`);
+                if (dynPriceElement) {
+                    // A Google Sheetből érkezett nevet (p.name) használjuk kulcsként
+                    if (dynamicPrices[p.name] !== undefined) {
+                        const onlinePrice = dynamicPrices[p.name];
+                        
+                        // UI frissítése a kért szöveggel és a kerekített árral
+                        dynPriceElement.innerText = `jelenlegi, kalkulált ár: ${onlinePrice.toLocaleString('hu-HU')} HUF`;
+                        dynPriceElement.classList.remove('loading');
+                        
+                        // HA AZT AKAROD, HOGY A KOSÁRBA A DINAMIKUS ÁR KERÜLJÖN, VEDD KI A KOMMENTET INNEN:
+                        // p.price = onlinePrice; 
+                    } else {
+                        dynPriceElement.innerText = "[ N/A ]";
+                        dynPriceElement.classList.remove('loading');
+                    }
+                }
+            });
+        } catch (error) {
+            console.error("[ ERROR ] Nem sikerült letölteni a dinamikus árakat.", error);
+            document.querySelectorAll('.dynamic-price').forEach(el => {
+                el.innerText = "[ SYNC ERROR ]";
+                el.classList.remove('loading');
+                el.style.color = "#ff003c";
+                el.style.borderColor = "#ff003c";
+            });
+        }
+    }
     async function sendOrderToCloud() {
         const customerInput = document.getElementById('customerName');
         
@@ -903,7 +975,9 @@ window.onclick = function(event) {
         }
     }
 
+    // Rendszer indítása
     initProducts();
+    fetchDynamicPrices(); // Lekérjük az online árakat a betöltés után
 
 </script>
 
