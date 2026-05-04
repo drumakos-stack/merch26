@@ -83,6 +83,40 @@
             text-transform: uppercase;
         }
 
+        /* --- VISSZASZÁMLÁLÓ --- */
+        .countdown-container {
+            text-align: right;
+            background: rgba(255, 170, 0, 0.1);
+            padding: 10px 20px;
+            border: 2px dashed #ffaa00;
+        }
+
+        .countdown-label {
+            color: #ffaa00;
+            font-size: 0.8em;
+            text-transform: uppercase;
+            font-family: 'Space Grotesk', sans-serif;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+        }
+
+        .countdown-timer {
+            font-family: 'JetBrains Mono', monospace;
+            color: #ffaa00;
+            font-size: 2.2em;
+            font-weight: 700;
+            line-height: 1;
+            text-shadow: 2px 2px 0px rgba(255, 170, 0, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .countdown-container { 
+                text-align: left; 
+                width: 100%; 
+                box-sizing: border-box; 
+            }
+        }
+        
         /* Input mezők */
         .customer-info {
             background: var(--bg-surface);
@@ -510,9 +544,15 @@ body::after {
 </head>
 <body>
 <div class="container">
-    <header>
-        <h1>Merch <span>//</span> Rendelés</h1>
-        <p>[ System.Online ] // FAKT Szakkollégium 2026. // MINDEN RENDELÉS CSÖKKENTI AZ ÁRAKAT</p>
+    <header style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px;">
+        <div>
+            <h1>Merch <span>//</span> Rendelés</h1>
+            <p>[ System.Online ] // FAKT Szakkollégium 2026. // MINDEN RENDELÉS CSÖKKENTI AZ ÁRAKAT</p>
+        </div>
+        <div class="countdown-container">
+            <div class="countdown-label">RENDELÉS LEZÁRUL:</div>
+            <div id="countdown" class="countdown-timer">--:--:--:--</div>
+        </div>
     </header>
 
     <div class="customer-info">
@@ -930,6 +970,40 @@ async function fetchDynamicPrices() {
             });
         }
     }
+   function startCountdown() {
+        // ITT ÁLLÍTSD BE A HATÁRIDŐT! (Hónap Nap, Év Óra:Perc:Másodperc)
+        const countDownDate = new Date("May 06, 2026 23:59:59").getTime();
+
+        const x = setInterval(function() {
+            const now = new Date().getTime();
+            const distance = countDownDate - now;
+
+            // Ha lejárt az idő
+            if (distance < 0) {
+                clearInterval(x);
+                document.getElementById("countdown").innerHTML = "[ LEJÁRT ]";
+                document.getElementById("countdown").style.color = "#ff003c"; // Piros lesz
+                document.querySelector(".countdown-container").style.borderColor = "#ff003c";
+                document.querySelector(".countdown-container").style.background = "rgba(255, 0, 60, 0.1)";
+                document.querySelector(".countdown-label").style.color = "#ff003c";
+                return;
+            }
+
+            // Idő kalkulálása
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            // Kiegészítés nullákkal (pl. 5 helyett 05)
+            const d = String(days).padStart(2, '0');
+            const h = String(hours).padStart(2, '0');
+            const m = String(minutes).padStart(2, '0');
+            const s = String(seconds).padStart(2, '0');
+
+            document.getElementById("countdown").innerHTML = `${d}N ${h}:${m}:${s}`;
+        }, 1000);
+    } 
     async function sendOrderToCloud() {
         const customerInput = document.getElementById('customerName');
         
@@ -978,6 +1052,7 @@ async function fetchDynamicPrices() {
     // Rendszer indítása
     initProducts();
     fetchDynamicPrices(); // Lekérjük az online árakat a betöltés után
+    startCountdown();// Visszaszámláló
 
 </script>
 
